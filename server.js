@@ -23,8 +23,11 @@ app.get('/', (req, res) => {
 });
 
 // Ruta para subir archivos
+const cors = require('cors');
+app.use(cors());
+
 app.post('/upload', upload.single('archivo'), (req, res) => {
-  res.send({
+  res.json({
     mensaje: 'Archivo subido correctamente.',
     nombre: req.file.filename,
     ruta: `/uploads/${req.file.filename}`
