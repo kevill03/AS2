@@ -127,7 +127,7 @@
     if (!confirmar) return;
 
     try {
-      const response = await fetch(`${BACKEND_URL}/delete/${publicId}`, {
+      const response = await fetch(`${BACKEND_URL}/delete/${encodeURIComponent(publicId)}`, {
         method: 'DELETE',
       });
 
