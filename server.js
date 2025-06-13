@@ -83,6 +83,17 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
     });
   }
 });
+app.get('/archivos', (req, res) => {
+  const query = 'SELECT * FROM archivos ORDER BY fecha_subida DESC';
+  db.query(query, (err, rows) => {
+    if (err) {
+      console.error('❌ Error al consultar archivos:', err);
+      return res.status(500).json({ mensaje: 'Error al consultar archivos.' });
+    }
+    res.json(rows);
+  });
+});
+
 
 // Iniciar servidor
 app.listen(port, () => {

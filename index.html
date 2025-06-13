@@ -16,18 +16,25 @@
         <input class="form-control" type="file" id="archivo" required />
       </div>
 
-      <button type="button" class="btn btn-primary w-100" id="submitBtn">Subir Archivo</button>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary flex-fill" id="submitBtn">Subir Archivo</button>
+        <button type="button" class="btn btn-secondary flex-fill" id="listarBtn">Listar Archivos</button>
+      </div>
     </div>
 
     <div id="resultado" class="mt-4 text-center"></div>
+
+    <!-- Contenedor de tabla -->
+    <div id="tablaArchivos" class="mt-5"></div>
   </div>
 
   <script>
     const submitBtn = document.getElementById('submitBtn');
+    const listarBtn = document.getElementById('listarBtn');
     const archivoInput = document.getElementById('archivo');
     const resultadoDiv = document.getElementById('resultado');
+    const tablaArchivosDiv = document.getElementById('tablaArchivos');
 
-    // Cambia esta variable por tu URL en Railway
     const BACKEND_URL = 'https://as2-production-2ddf.up.railway.app';
 
     submitBtn.addEventListener('click', async () => {
@@ -41,27 +48,17 @@
       const formData = new FormData();
       formData.append('archivo', archivo);
 
-      // Mostrar el contenido del FormData
-      for (const pair of formData.entries()) {
-        console.log(`🔹 FormData -> ${pair[0]}:`, pair[1]);
-      }
-
       try {
         const response = await fetch(`${BACKEND_URL}/upload`, {
           method: 'POST',
           body: formData,
         });
 
-        console.log('🔄 Estado de la respuesta:', response.status);
-        console.log('🔄 Headers:', [...response.headers.entries()]);
-        console.log('🔄 ¿Fue exitosa?', response.ok);
-
         if (!response.ok) {
           throw new Error('Respuesta del servidor no OK');
         }
 
         const data = await response.json();
-        console.log('📦 Datos recibidos del servidor:', data);
 
         resultadoDiv.innerHTML = `
           <div class="alert alert-success">
@@ -70,8 +67,6 @@
         `;
 
         await new Promise(r => setTimeout(r, 1500));
-
-        // Redirigir con la URL del archivo subida
         window.location.href = `exito.html?url=${encodeURIComponent(data.url)}`;
       } catch (error) {
         console.error('❌ Error al subir:', error);
@@ -86,9 +81,55 @@
         window.location.href = 'error.html';
       }
     });
+
+    listarBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/archivos`);
+        const archivos = await response.json();
+
+        if (!Array.isArray(archivos)) {
+          throw new Error('Respuesta inesperada del servidor');
+        }
+
+        let tablaHTML = `
+          <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+              <tr>
+                <th>#</th>
+                <th>URL</th>
+                <th>Public ID</th>
+                <th>Fecha de subida</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        archivos.forEach((archivo, index) => {
+          tablaHTML += `
+            <tr>
+              <td>${index + 1}</td>
+              <td><a href="${archivo.url}" target="_blank">Ver archivo</a></td>
+              <td>${archivo.public_id}</td>
+              <td>${new Date(archivo.fecha_subida).toLocaleString()}</td>
+            </tr>
+          `;
+        });
+
+        tablaHTML += `</tbody></table>`;
+        tablaArchivosDiv.innerHTML = tablaHTML;
+      } catch (error) {
+        console.error('❌ Error al obtener archivos:', error);
+        tablaArchivosDiv.innerHTML = `
+          <div class="alert alert-danger">
+            Error al obtener la lista de archivos.
+          </div>
+        `;
+      }
+    });
   </script>
 </body>
 </html>
+
 
 
 
