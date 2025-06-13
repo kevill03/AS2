@@ -5,7 +5,7 @@ const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
-const db = require('./db'); // 👈 Aquí importas la conexión a la BD
+const db = require('./db'); // 👈 Conexión a la BD
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,10 +24,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
-// Servir archivos estáticos (opcional)
+// Servir archivos estáticos
 app.use(express.static(__dirname));
 
-// Configurar Multer (subida temporal)
+// Configurar Multer
 const upload = multer({ dest: 'temp_uploads/' });
 
 // Ruta principal
@@ -35,7 +35,7 @@ app.get('/', (req, res) => {
   res.send('Servidor con Cloudinary funcionando.');
 });
 
-// Ruta de subida de archivos
+// Ruta de subida
 app.post('/upload', upload.single('archivo'), async (req, res) => {
   console.log('📥 Archivo recibido:', req.file);
 
@@ -59,8 +59,8 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
       }
     });
 
-    // Guardar en la base de datos
-    const query = 'INSERT INTO archivos (url, public_id) VALUES (?, ?)';
+    // Guardar en la base de datos, incluyendo fecha_subida con NOW()
+    const query = 'INSERT INTO archivos (url, public_id, fecha_subida) VALUES (?, ?, NOW())';
     db.query(query, [result.secure_url, result.public_id], (err, rows) => {
       if (err) {
         console.error('❌ Error guardando en la base de datos:', err);
@@ -88,6 +88,7 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Servidor escuchando en http://localhost:${port}`);
 });
+
 
 
 
