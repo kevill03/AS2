@@ -5,6 +5,7 @@ const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
+const db = require('./db'); // 👈 Aquí importas la conexión a la BD
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,19 +17,17 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Middleware de CORS (mejor configurado)
+// Middleware de CORS
 app.use(cors({
-  origin: 'http://localhost:5500', // <- permitir solo ese origen
+  origin: 'http://localhost:5500',
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type']
 }));
 
-// Middleware para servir archivos estáticos (por si decides alojar HTML aquí)
-//app.use(express.static(path.join(__dirname, 'public')));
-
-// 👉 Sirve archivos estáticos desde la raíz del proyecto
+// Servir archivos estáticos (opcional)
 app.use(express.static(__dirname));
-// Configurar Multer para subir archivos temporalmente
+
+// Configurar Multer (subida temporal)
 const upload = multer({ dest: 'temp_uploads/' });
 
 // Ruta principal
@@ -36,14 +35,12 @@ app.get('/', (req, res) => {
   res.send('Servidor con Cloudinary funcionando.');
 });
 
-// Ruta de subida
+// Ruta de subida de archivos
 app.post('/upload', upload.single('archivo'), async (req, res) => {
   console.log('📥 Archivo recibido:', req.file);
 
   if (!req.file) {
-    return res.status(400).json({
-      mensaje: 'No se recibió ningún archivo.'
-    });
+    return res.status(400).json({ mensaje: 'No se recibió ningún archivo.' });
   }
 
   try {
@@ -53,7 +50,7 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
 
     console.log('✅ Subido a Cloudinary:', result.secure_url);
 
-    // Eliminar archivo temporal de forma segura
+    // Eliminar archivo temporal
     fs.unlink(req.file.path, (err) => {
       if (err) {
         console.warn('⚠️ No se pudo eliminar el archivo temporal:', err);
@@ -62,11 +59,21 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
       }
     });
 
-    return res.status(200).json({
-      mensaje: 'Archivo subido correctamente a Cloudinary.',
-      url: result.secure_url,
-      public_id: result.public_id
+    // Guardar en la base de datos
+    const query = 'INSERT INTO archivos (url, public_id) VALUES (?, ?)';
+    db.query(query, [result.secure_url, result.public_id], (err, rows) => {
+      if (err) {
+        console.error('❌ Error guardando en la base de datos:', err);
+        return res.status(500).json({ mensaje: 'Error al guardar en la base de datos.' });
+      }
+
+      return res.status(200).json({
+        mensaje: 'Archivo subido y guardado correctamente.',
+        url: result.secure_url,
+        public_id: result.public_id
+      });
     });
+
   } catch (error) {
     console.error('❌ Error subiendo a Cloudinary:', error);
 
