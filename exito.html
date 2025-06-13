@@ -9,7 +9,30 @@
   <div class="container">
     <h1 class="text-success">¡Éxito!</h1>
     <p>Tu archivo fue subido correctamente.</p>
+
+    <p id="linkArchivo" class="mt-3"></p>
+
     <a href="index.html" class="btn btn-primary mt-3">Subir otro archivo</a>
   </div>
+
+  <script>
+    // Función para obtener parámetros de la URL
+    function getQueryParam(param) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(param);
+    }
+
+    const urlArchivo = getQueryParam('url');
+    const linkContainer = document.getElementById('linkArchivo');
+
+    if (urlArchivo) {
+      // Mostrar el link clickeable
+      linkContainer.innerHTML = `<a href="${urlArchivo}" target="_blank" rel="noopener noreferrer">Ver archivo subido</a>`;
+    } else {
+      linkContainer.textContent = 'No se encontró el enlace del archivo.';
+    }
+  </script>
 </body>
 </html>
+
+
