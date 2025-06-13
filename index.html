@@ -27,6 +27,9 @@
     const archivoInput = document.getElementById('archivo');
     const resultadoDiv = document.getElementById('resultado');
 
+    // Cambia esta variable por tu URL en Railway
+    const BACKEND_URL = 'https://as2-production-2ddf.up.railway.app';
+
     submitBtn.addEventListener('click', async () => {
       const archivo = archivoInput.files[0];
 
@@ -44,7 +47,7 @@
       }
 
       try {
-        const response = await fetch('http://localhost:3000/upload', {
+        const response = await fetch(`${BACKEND_URL}/upload`, {
           method: 'POST',
           body: formData,
         });
