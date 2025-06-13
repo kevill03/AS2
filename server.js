@@ -94,6 +94,19 @@ app.get('/archivos', (req, res) => {
   });
 });
 
+app.delete('/delete/:publicId', async (req, res) => {
+  const { publicId } = req.params;
+
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    await db.query('DELETE FROM archivos WHERE public_id = ?', [publicId]);
+
+    res.json({ mensaje: 'Archivo eliminado con éxito' });
+  } catch (err) {
+    console.error('❌ Error al eliminar:', err);
+    res.status(500).json({ mensaje: 'Error al eliminar archivo' });
+  }
+});
 
 // Iniciar servidor
 app.listen(port, () => {

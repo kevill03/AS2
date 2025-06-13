@@ -16,117 +16,131 @@
         <input class="form-control" type="file" id="archivo" required />
       </div>
 
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-primary flex-fill" id="submitBtn">Subir Archivo</button>
-        <button type="button" class="btn btn-secondary flex-fill" id="listarBtn">Listar Archivos</button>
-      </div>
-    </div>
+     <div class="d-flex gap-2">
+  <button type="button" class="btn btn-primary flex-fill" id="submitBtn">Subir Archivo</button>
+  <button type="button" class="btn btn-secondary flex-fill" id="listarBtn">Listar Archivos</button>
+</div>
 
-    <div id="resultado" class="mt-4 text-center"></div>
+<!-- Contenedor de tabla -->
+<div id="tablaArchivos" class="mt-5"></div>
 
-    <!-- Contenedor de tabla -->
-    <div id="tablaArchivos" class="mt-5"></div>
-  </div>
+<script>
+  const submitBtn = document.getElementById('submitBtn');
+  const listarBtn = document.getElementById('listarBtn');
+  const archivoInput = document.getElementById('archivo');
+  const resultadoDiv = document.getElementById('resultado');
+  const tablaArchivosDiv = document.getElementById('tablaArchivos');
 
-  <script>
-    const submitBtn = document.getElementById('submitBtn');
-    const listarBtn = document.getElementById('listarBtn');
-    const archivoInput = document.getElementById('archivo');
-    const resultadoDiv = document.getElementById('resultado');
-    const tablaArchivosDiv = document.getElementById('tablaArchivos');
+  const BACKEND_URL = 'https://as2-production-2ddf.up.railway.app';
 
-    const BACKEND_URL = 'https://as2-production-2ddf.up.railway.app';
+  submitBtn.addEventListener('click', async () => {
+    const archivo = archivoInput.files[0];
 
-    submitBtn.addEventListener('click', async () => {
-      const archivo = archivoInput.files[0];
+    if (!archivo) {
+      alert('Por favor selecciona un archivo antes de subir.');
+      return;
+    }
 
-      if (!archivo) {
-        alert('Por favor selecciona un archivo antes de subir.');
-        return;
-      }
+    const formData = new FormData();
+    formData.append('archivo', archivo);
 
-      const formData = new FormData();
-      formData.append('archivo', archivo);
+    try {
+      const response = await fetch(`${BACKEND_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-      try {
-        const response = await fetch(`${BACKEND_URL}/upload`, {
-          method: 'POST',
-          body: formData,
-        });
+      if (!response.ok) throw new Error('Respuesta del servidor no OK');
 
-        if (!response.ok) {
-          throw new Error('Respuesta del servidor no OK');
-        }
+      const data = await response.json();
 
-        const data = await response.json();
+      resultadoDiv.innerHTML = `
+        <div class="alert alert-success">
+          Archivo subido correctamente. Redireccionando en 1.5 segundos...
+        </div>
+      `;
 
-        resultadoDiv.innerHTML = `
-          <div class="alert alert-success">
-            Archivo subido correctamente. Redireccionando en 1.5 segundos...
-          </div>
-        `;
+      await new Promise(r => setTimeout(r, 1500));
+      window.location.href = `exito.html?url=${encodeURIComponent(data.url)}`;
+    } catch (error) {
+      console.error('❌ Error al subir:', error);
+      resultadoDiv.innerHTML = `
+        <div class="alert alert-danger">
+          Hubo un error al subir el archivo. Redireccionando a error.html...
+        </div>
+      `;
+      await new Promise(r => setTimeout(r, 1500));
+      window.location.href = 'error.html';
+    }
+  });
 
-        await new Promise(r => setTimeout(r, 1500));
-        window.location.href = `exito.html?url=${encodeURIComponent(data.url)}`;
-      } catch (error) {
-        console.error('❌ Error al subir:', error);
+  listarBtn.addEventListener('click', listarArchivos);
 
-        resultadoDiv.innerHTML = `
-          <div class="alert alert-danger">
-            Hubo un error al subir el archivo. Redireccionando a error.html...
-          </div>
-        `;
+  async function listarArchivos() {
+    try {
+      const response = await fetch(`${BACKEND_URL}/archivos`);
+      const archivos = await response.json();
 
-        await new Promise(r => setTimeout(r, 1500));
-        window.location.href = 'error.html';
-      }
-    });
+      if (!Array.isArray(archivos)) throw new Error('Respuesta inesperada');
 
-    listarBtn.addEventListener('click', async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/archivos`);
-        const archivos = await response.json();
-
-        if (!Array.isArray(archivos)) {
-          throw new Error('Respuesta inesperada del servidor');
-        }
-
-        let tablaHTML = `
-          <table class="table table-striped table-bordered">
-            <thead class="table-dark">
-              <tr>
-                <th>#</th>
-                <th>URL</th>
-                <th>Public ID</th>
-                <th>Fecha de subida</th>
-              </tr>
-            </thead>
-            <tbody>
-        `;
-
-        archivos.forEach((archivo, index) => {
-          tablaHTML += `
+      let tablaHTML = `
+        <table class="table table-striped table-bordered">
+          <thead class="table-dark">
             <tr>
-              <td>${index + 1}</td>
-              <td><a href="${archivo.url}" target="_blank">Ver archivo</a></td>
-              <td>${archivo.public_id}</td>
-              <td>${new Date(archivo.fecha_subida).toLocaleString()}</td>
+              <th>#</th>
+              <th>URL</th>
+              <th>Public ID</th>
+              <th>Fecha de subida</th>
+              <th>Acciones</th>
             </tr>
-          `;
-        });
+          </thead>
+          <tbody>
+      `;
 
-        tablaHTML += `</tbody></table>`;
-        tablaArchivosDiv.innerHTML = tablaHTML;
-      } catch (error) {
-        console.error('❌ Error al obtener archivos:', error);
-        tablaArchivosDiv.innerHTML = `
-          <div class="alert alert-danger">
-            Error al obtener la lista de archivos.
-          </div>
+      archivos.forEach((archivo, index) => {
+        tablaHTML += `
+          <tr>
+            <td>${index + 1}</td>
+            <td><a href="${archivo.url}" target="_blank">Ver archivo</a></td>
+            <td>${archivo.public_id}</td>
+            <td>${new Date(archivo.fecha_subida).toLocaleString()}</td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="eliminarArchivo('${archivo.public_id}')">
+                Eliminar
+              </button>
+            </td>
+          </tr>
         `;
-      }
-    });
-  </script>
+      });
+
+      tablaHTML += `</tbody></table>`;
+      tablaArchivosDiv.innerHTML = tablaHTML;
+    } catch (error) {
+      console.error('❌ Error al listar:', error);
+      tablaArchivosDiv.innerHTML = `<div class="alert alert-danger">Error al obtener archivos.</div>`;
+    }
+  }
+
+  async function eliminarArchivo(publicId) {
+    const confirmar = confirm(`¿Seguro que deseas eliminar el archivo con ID "${publicId}"?`);
+
+    if (!confirmar) return;
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/delete/${publicId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('No se pudo eliminar');
+
+      alert('✅ Archivo eliminado correctamente.');
+      listarArchivos(); // Recarga la tabla
+    } catch (error) {
+      console.error('❌ Error al eliminar:', error);
+      alert('❌ Ocurrió un error al intentar eliminar el archivo.');
+    }
+  }
+</script>
 </body>
 </html>
 
