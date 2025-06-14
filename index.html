@@ -4,13 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Subir Archivo - Cliente</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-</head>
-<body>
-  <div class="container mt-5">
-    <h2 class="mb-4 text-center">Gestor de Imagenes en la nube</h2>
 
-    <div class="border p-4 rounded shadow-sm">
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <div class="container mt-5 flex-grow-1">
+    <h2 class="mb-4 text-center fw-bold">Gestor de Imágenes en la Nube</h2>
+
+    <div class="card p-4 shadow-lg">
       <div class="mb-3">
         <label for="archivo" class="form-label">Selecciona un archivo</label>
         <input class="form-control" type="file" id="archivo" required />
@@ -18,16 +25,19 @@
 
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-primary flex-fill" id="submitBtn">Subir Imagen</button>
-        <button type="button" class="btn btn-secondary flex-fill" id="listarBtn">Listar Imagenes</button>
+        <button type="button" class="btn btn-secondary flex-fill" id="listarBtn">Listar Imágenes</button>
       </div>
 
-      <!-- Contenedor para mensajes de resultado -->
       <div id="resultado" class="mt-4 text-center"></div>
-
-      <!-- Contenedor de tabla -->
-      <div id="tablaArchivos" class="mt-5"></div>
+      <div id="tablaArchivos" class="mt-5 text-dark"></div>
     </div>
   </div>
+
+  <footer class="footer text-center text-white">
+    <div class="py-3">
+      Kevin Medina AS2
+    </div>
+  </footer>
 
   <script>
     const submitBtn = document.getElementById('submitBtn');
@@ -42,7 +52,7 @@
       const archivo = archivoInput.files[0];
 
       if (!archivo) {
-        alert('Por favor selecciona un archivo antes de subir.');
+        Swal.fire('⚠️', 'Por favor selecciona un archivo antes de subir.', 'warning');
         return;
       }
 
@@ -59,23 +69,23 @@
 
         const data = await response.json();
 
-        resultadoDiv.innerHTML = `
-          <div class="alert alert-success">
-            Archivo subido correctamente. Redireccionando en 1.5 segundos...
-          </div>
-        `;
+        await Swal.fire({
+          icon: 'success',
+          title: 'Archivo subido correctamente',
+          text: 'Redirigiendo...',
+          timer: 1500,
+          showConfirmButton: false
+        });
 
-        await new Promise(r => setTimeout(r, 1500));
         window.location.href = `exito.html?url=${encodeURIComponent(data.url)}`;
       } catch (error) {
         console.error('❌ Error al subir:', error);
-        resultadoDiv.innerHTML = `
-          <div class="alert alert-danger">
-            Hubo un error al subir el archivo. Redireccionando a error.html...
-          </div>
-        `;
-        await new Promise(r => setTimeout(r, 1500));
-        window.location.href = 'error.html';
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al subir el archivo',
+          text: 'Por favor, Recuerda que solo puedes gestionar imagenes en nuestro sistema, verifica el tipo de archivo e intenta de nuevo.',
+          showConfirmButton: true
+        });
       }
     });
 
@@ -89,8 +99,8 @@
         if (!Array.isArray(archivos)) throw new Error('Respuesta inesperada');
 
         let tablaHTML = `
-          <table class="table table-striped table-bordered">
-            <thead class="table-dark">
+          <table class="table table-striped table-bordered table-hover bg-white text-dark">
+            <thead>
               <tr>
                 <th>#</th>
                 <th>URL</th>
@@ -127,9 +137,18 @@
     }
 
     async function eliminarArchivo(publicId) {
-      const confirmar = confirm(`¿Seguro que deseas eliminar el archivo con ID "${publicId}"?`);
+      const { isConfirmed } = await Swal.fire({
+        title: `¿Eliminar archivo?`,
+        text: `ID: ${publicId}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
 
-      if (!confirmar) return;
+      if (!isConfirmed) return;
 
       try {
         const response = await fetch(`${BACKEND_URL}/delete/${encodeURIComponent(publicId)}`, {
@@ -138,16 +157,18 @@
 
         if (!response.ok) throw new Error('No se pudo eliminar');
 
-        alert('✅ Archivo eliminado correctamente.');
-        listarArchivos(); // Recarga la tabla
+        await Swal.fire('Eliminado', 'El archivo fue eliminado correctamente.', 'success');
+        listarArchivos();
       } catch (error) {
         console.error('❌ Error al eliminar:', error);
-        alert('❌ Ocurrió un error al intentar eliminar el archivo.');
+        await Swal.fire('Error', 'Ocurrió un error al intentar eliminar el archivo.', 'error');
       }
     }
   </script>
 </body>
 </html>
+
+
 
 
 

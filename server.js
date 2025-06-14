@@ -4,41 +4,32 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 const cors = require('cors');
-const path = require('path');
-const db = require('./db'); // 👈 Conexión a la BD
+const db = require('./db');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configurar Cloudinary
+// Configuración de Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Middleware de CORS
-app.use(cors({
-  origin: 'http://localhost:5500',
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type']
-}));
-
-// Servir archivos estáticos
+// Middleware
+app.use(cors()); // Permite todos los orígenes, útil para Railway u otros clientes remotos
 app.use(express.static(__dirname));
 
-// Configurar Multer
+// Multer para archivos temporales
 const upload = multer({ dest: 'temp_uploads/' });
 
-// Ruta principal
+// Ruta raíz
 app.get('/', (req, res) => {
   res.send('Servidor con Cloudinary funcionando.');
 });
 
-// Ruta de subida
+// Subida de archivo
 app.post('/upload', upload.single('archivo'), async (req, res) => {
-  console.log('📥 Archivo recibido:', req.file);
-
   if (!req.file) {
     return res.status(400).json({ mensaje: 'No se recibió ningún archivo.' });
   }
@@ -48,26 +39,20 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
       folder: 'archivos-subidos'
     });
 
-    console.log('✅ Subido a Cloudinary:', result.secure_url);
-
-    // Eliminar archivo temporal
+    // Eliminar archivo local temporal
     fs.unlink(req.file.path, (err) => {
-      if (err) {
-        console.warn('⚠️ No se pudo eliminar el archivo temporal:', err);
-      } else {
-        console.log('🧹 Archivo temporal eliminado.');
-      }
+      if (err) console.warn('⚠️ No se pudo eliminar archivo temporal:', err);
     });
 
-    // Guardar en la base de datos, incluyendo fecha_subida con NOW()
+    // Guardar en la base de datos
     const query = 'INSERT INTO archivos (url, public_id, fecha_subida) VALUES (?, ?, NOW())';
-    db.query(query, [result.secure_url, result.public_id], (err, rows) => {
+    db.query(query, [result.secure_url, result.public_id], (err) => {
       if (err) {
-        console.error('❌ Error guardando en la base de datos:', err);
+        console.error('❌ Error al guardar en la base de datos:', err);
         return res.status(500).json({ mensaje: 'Error al guardar en la base de datos.' });
       }
 
-      return res.status(200).json({
+      res.status(200).json({
         mensaje: 'Archivo subido y guardado correctamente.',
         url: result.secure_url,
         public_id: result.public_id
@@ -76,16 +61,13 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error subiendo a Cloudinary:', error);
-
-    return res.status(500).json({
-      mensaje: 'Error al subir archivo a Cloudinary.',
-      error: error.message
-    });
+    res.status(500).json({ mensaje: 'Error al subir archivo a Cloudinary.', error: error.message });
   }
 });
+
+// Obtener archivos
 app.get('/archivos', (req, res) => {
-  const query = 'SELECT * FROM archivos ORDER BY fecha_subida DESC';
-  db.query(query, (err, rows) => {
+  db.query('SELECT * FROM archivos ORDER BY fecha_subida DESC', (err, rows) => {
     if (err) {
       console.error('❌ Error al consultar archivos:', err);
       return res.status(500).json({ mensaje: 'Error al consultar archivos.' });
@@ -94,14 +76,15 @@ app.get('/archivos', (req, res) => {
   });
 });
 
+// Eliminar archivo
 app.delete('/delete/:publicId', (req, res) => {
   const { publicId } = req.params;
 
   cloudinary.uploader.destroy(publicId)
     .then(() => {
-      db.query('DELETE FROM archivos WHERE public_id = ?', [publicId], (err, results) => {
+      db.query('DELETE FROM archivos WHERE public_id = ?', [publicId], (err) => {
         if (err) {
-          console.error('❌ Error al eliminar:', err);
+          console.error('❌ Error al eliminar de la base de datos:', err);
           return res.status(500).json({ mensaje: 'Error al eliminar archivo' });
         }
         res.json({ mensaje: 'Archivo eliminado con éxito' });
@@ -113,11 +96,11 @@ app.delete('/delete/:publicId', (req, res) => {
     });
 });
 
-
 // Iniciar servidor
 app.listen(port, () => {
-  console.log(`🚀 Servidor escuchando en http://localhost:${port}`);
+  console.log(`🚀 Servidor escuchando en el puerto ${port}`);
 });
+
 
 
 

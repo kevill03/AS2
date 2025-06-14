@@ -1,0 +1,63 @@
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 700px;
+    }
+
+    .card {
+      background-color: #ffffff10;
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      color: white;
+      border: none;
+    }
+
+    label {
+      font-weight: 500;
+    }
+
+    .btn-primary, .btn-secondary {
+      border: none;
+      padding: 10px 20px;
+    }
+
+    .table a {
+      color: #007bff;
+    }
+
+    .table thead {
+      background-color: #343a40;
+      color: white;
+    }
+
+    .alert {
+      border-radius: 10px;
+    }
+    
+.btn-link-custom {
+  display: inline-block;
+  background-color: rgba(0, 0, 0, 0.4); /* fondo semitransparente */
+  color: #fff !important;               /* texto blanco */
+  padding: 10px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  word-break: break-all;                /* para URLs largas */
+  transition: background-color 0.3s ease;
+}
+
+.btn-link-custom:hover {
+  background-color: rgba(0, 0, 0, 0.6);
+  text-decoration: underline;
+}
+.footer {
+  background: linear-gradient(to right, #000000, #1f1f1f);
+  width: 100%;
+  font-size: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
