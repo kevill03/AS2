@@ -45,8 +45,10 @@ app.post('/upload', upload.single('archivo'), async (req, res) => {
     });
 
     // Guardar en la base de datos
-    const query = 'INSERT INTO archivos (url, public_id, fecha_subida) VALUES (?, ?, NOW())';
-    db.query(query, [result.secure_url, result.public_id], (err) => {
+    const fechaUTC4 = new Date(Date.now() - 4 * 60 * 60 * 1000);
+    const fechaFormateada = fechaUTC4.toISOString().replace('T', ' ').substring(0, 19); // "2025-06-14 16:34:22"
+    const query = 'INSERT INTO archivos (url, public_id, fecha_subida) VALUES (?, ?, ?)';
+    db.query(query, [result.secure_url, result.public_id, fechaFormateada], (err) => {
       if (err) {
         console.error('❌ Error al guardar en la base de datos:', err);
         return res.status(500).json({ mensaje: 'Error al guardar en la base de datos.' });
